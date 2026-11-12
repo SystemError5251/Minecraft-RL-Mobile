@@ -14,6 +14,17 @@ Das Projekt ist eine rein statische Seite (`index.html`, `src/`, `assets/`) und 
 
 Steuerung: links Joystick, rechts umsehen, tippen = Block setzen, halten = abbauen. Am PC: WASD, Maus, Linksklick abbauen, Rechtsklick setzen, 1–9/Mausrad für die Leiste, M/Esc für das Menü.
 
+## Android-App (Hochformat)
+
+`android/` enthält eine schlanke WebView-Hülle: Vollbild, fest im Hochformat, ohne Internetzugriff – die Spieldateien liegen in der APK. Eine fertige Debug-APK liegt unter `dist/Kantenhain-debug.apk` (Android 8.0+, WebGL2 nötig).
+
+```
+cd android
+ANDROID_HOME=/pfad/zum/android-sdk gradle assembleDebug   # -> app/build/outputs/apk/debug/app-debug.apk
+```
+
+Benötigt JDK 17+, Gradle 8.13+ sowie Android-SDK-Plattform 35 und Build-Tools 35. Für eine Veröffentlichung im Play Store ist ein Release-Build mit eigenem Signaturschlüssel nötig.
+
 ## Grafik
 
 | | Niedrig | Mittel | Hoch | Ultra |

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Isometrischer Grasblock (eigene Grafik) -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+    <path android:fillColor="#6FCB3A" android:pathData="M54,28 L78,41 L54,54 L30,41 Z" />
+    <path android:fillColor="#7A4A26" android:pathData="M30,41 L54,54 L54,82 L30,69 Z" />
+    <path android:fillColor="#5A3418" android:pathData="M78,41 L54,54 L54,82 L78,69 Z" />
+    <path android:fillColor="#4FA52A" android:pathData="M30,41 L54,54 L54,61 L48,56 L42,57 L36,51 L30,50 Z" />
+    <path android:fillColor="#3C8A20" android:pathData="M78,41 L54,54 L54,61 L60,57 L66,56 L72,51 L78,49 Z" />
+    <path android:fillColor="#A7E66B" android:pathData="M54,28 L78,41 L72,44 L54,34 L36,44 L30,41 Z" />
+</vector>

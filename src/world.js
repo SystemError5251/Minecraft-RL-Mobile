@@ -1,12 +1,28 @@
 // Chunk-Verwaltung im Hauptthread: fordert Meshes beim Worker an, hält Blockdaten für Kollision.
 import { CS, CH } from './worldgen.js';
+import { createService } from './chunkservice.js';
 const key = (x, z) => x + ',' + z;
 export class World {
   constructor(renderer, cfg) {
     this.r = renderer; this.chunks = new Map(); this.list = []; this.pending = 0; this.offsets = []; this.radius = -1; this.tick = 0;
-    this.worker = new Worker(new URL('./worker.js', import.meta.url), { type: 'module' });
-    this.worker.postMessage({ type: 'init', cfg });
-    this.worker.onmessage = (e) => this.onMesh(e.data);
+    this.cfg = cfg; this.sent = [];
+    try {
+      this.worker = new Worker(new URL('./worker.js', import.meta.url), { type: 'module' });
+      this.worker.onmessage = (e) => { if (e.data.type === 'ready') { this.workerOk = true; clearTimeout(this.wt); } else this.onMesh(e.data); };
+      this.worker.onerror = () => this.useLocal();
+      this.wt = setTimeout(() => { if (!this.workerOk) this.useLocal(); }, 4000);
+    } catch { this.useLocal(); }
+    this.post({ type: 'init', cfg });
+  }
+  post(m) { if (!this.workerOk && !this.local) this.sent.push(m); if (this.local) setTimeout(() => this.local(m), 0); else this.worker.postMessage(m); }
+  // Ersatz, falls Module-Worker nicht verfügbar sind (z. B. ältere WebViews): Chunks im Hauptthread erzeugen
+  useLocal() {
+    if (this.local || this.workerOk) return;
+    clearTimeout(this.wt);
+    try { this.worker?.terminate(); } catch { /* egal */ }
+    this.local = createService((m) => this.onMesh(m));
+    const q = this.sent; this.sent = [];
+    q.forEach((m, i) => setTimeout(() => this.local(m), i * 4));
   }
   onMesh(d) {
     const c = this.chunks.get(key(d.cx, d.cz));
@@ -31,7 +47,7 @@ export class World {
       if (this.pending >= 6) continue;
       const nc = { cx, cz, ready: false, blocks: null, opaque: null, water: null, tufts: null, dist: 0 };
       this.chunks.set(k, nc); this.list.push(nc); this.pending++;
-      this.worker.postMessage({ type: 'mesh', cx, cz });
+      this.post({ type: 'mesh', cx, cz });
     }
     this.missing = missing;
     if (++this.tick % 120 === 0) {
@@ -40,7 +56,7 @@ export class World {
         if (c.ready && Math.max(Math.abs(c.cx - ccx), Math.abs(c.cz - ccz)) > radius + 2) { this.r.freeChunk(c); this.chunks.delete(k); changed = true; }
       }
       if (changed) this.list = [...this.chunks.values()];
-      this.worker.postMessage({ type: 'drop', cx: ccx, cz: ccz, r: radius + 4 });
+      this.post({ type: 'drop', cx: ccx, cz: ccz, r: radius + 4 });
     }
   }
   getBlock(x, y, z) {
@@ -56,6 +72,6 @@ export class World {
     if (!c || !c.blocks) return;
     c.blocks[(x - cx * CS) + (z - cz * CS) * CS + y * CS * CS] = b;
     const loaded = []; for (const [k, ch] of this.chunks) if (ch.ready) loaded.push(k);
-    this.worker.postMessage({ type: 'set', x, y, z, b, loaded });
+    this.post({ type: 'set', x, y, z, b, loaded });
   }
 }

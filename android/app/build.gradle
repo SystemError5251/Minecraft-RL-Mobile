@@ -1,0 +1,27 @@
+plugins { id 'com.android.application' }
+
+// Das Spiel (statische Web-App aus dem Repo-Wurzelverzeichnis) wird als Asset "www/" in die APK gepackt.
+def webDir = layout.buildDirectory.dir('web')
+def syncWeb = tasks.register('syncWeb', Sync) {
+    from(rootProject.file('..')) {
+        include 'index.html', 'style.css', 'src/**', 'assets/**'
+    }
+    into webDir.map { it.dir('www') }
+}
+
+android {
+    namespace 'app.kantenhain'
+    compileSdk 35
+    defaultConfig {
+        applicationId 'app.kantenhain'
+        minSdk 26
+        targetSdk 35
+        versionCode 1
+        versionName '0.1.0'
+    }
+    sourceSets { main { assets.srcDir(webDir) } }
+    buildTypes { release { minifyEnabled false } }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+    androidResources { noCompress += ['bin'] }
+}
+tasks.named('preBuild') { dependsOn syncWeb }
