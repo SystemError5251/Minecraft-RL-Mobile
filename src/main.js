@@ -112,6 +112,7 @@ async function start() {
     if (state.timeRunning && !state.menuOpen) state.time = (state.time + dt * 24 / 1200) % 24;
     player.yaw += input.lookX; player.pitch = Math.max(-1.55, Math.min(1.55, player.pitch - input.lookY)); input.lookX = input.lookY = 0;
     if (!shot && !showcase && !state.menuOpen) player.update(dt, input, world);
+    if (input.jumpRelease) { input.jump = false; input.jumpRelease = false; }
     const W = canvas.width, H = canvas.height, aspect = W / H;
     let envOpts = { fog: scene?.fog };
     if (showcase) {

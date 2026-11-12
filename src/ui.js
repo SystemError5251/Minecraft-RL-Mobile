@@ -113,7 +113,7 @@ export class Input {
       el.addEventListener('pointerdown', (e) => { e.preventDefault(); touchMode(); el.setPointerCapture(e.pointerId); el.classList.add('down'); down(); if (repeat) t = setInterval(down, repeat); });
       el.addEventListener('pointerup', stop); el.addEventListener('pointercancel', stop);
     };
-    hold('jumpBtn', () => { this.jump = true; }, () => setTimeout(() => { this.jump = false; }, 120)); // kurzes Antippen zählt auch
+    hold('jumpBtn', () => { this.jump = true; }, () => { this.jumpRelease = true; }); // wird erst nach dem nächsten Physikschritt gelöst – kurzes Antippen zählt auch
     hold('breakBtn', () => cb.breakBlock(), null, 260);
     hold('placeBtn', () => cb.placeBlock(), null, 260);
     $('menuBtn').addEventListener('click', () => cb.menu());
