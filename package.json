@@ -1,0 +1,12 @@
+{
+  "name": "kantenhain",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Voxel-Spiel für den mobilen Browser mit prozeduralen Texturen und Shader-Grafik (WebGL2)",
+  "scripts": {
+    "build": "node tools/gen-textures.mjs",
+    "start": "node tools/gen-textures.mjs && node tools/serve.mjs 8080",
+    "screenshots": "node tools/screenshots.mjs"
+  }
+}
