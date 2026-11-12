@@ -12,7 +12,7 @@ npm run screenshots  # Vergleichsbilder Niedrig/Ultra (benötigt Playwright + Ch
 
 Das Projekt ist eine rein statische Seite (`index.html`, `src/`, `assets/`) und läuft auf jedem Static-Hosting.
 
-Steuerung: links Joystick, rechts umsehen, tippen = Block setzen, halten = abbauen. Am PC: WASD, Maus, Linksklick abbauen, Rechtsklick setzen, 1–9/Mausrad für die Leiste, M/Esc für das Menü.
+Steuerung (Touch, fürs Hochformat ausgelegt): Joystick links unten, rechts unten Tasten für Setzen, Abbauen und Springen (gedrückt halten wiederholt), überall sonst wischen zum Umsehen. Am PC: WASD, Maus, Linksklick abbauen, Rechtsklick setzen, 1–9/Mausrad für die Leiste, M/Esc für das Menü.
 
 ## Android-App (Hochformat)
 

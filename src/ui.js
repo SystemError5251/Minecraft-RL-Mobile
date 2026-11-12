@@ -27,7 +27,7 @@ export function buildMenu(state, settings, apply) {
   const m = $('menu'), q = settings.effective(true), qa = settings.effective();
   const autoOff = settings.auto ? AUTO_STEPS.slice(0, settings.autoStep).map((s) => s[0]).join(', ') : '';
   m.innerHTML = `<div class="panel">
-    <h1>Kantenhain</h1><p>Voxel-Welt mit prozeduralen Texturen. Tippen setzt, lange halten baut ab.</p>
+    <h1>Kantenhain</h1><p>Voxel-Welt mit prozeduralen Texturen. Links laufen, rechts Setzen, Abbauen und Springen, sonst überall wischen zum Umsehen.</p>
     <h2>Grafikqualität</h2>
     <div class="seg">${Object.keys(PRESETS).map((p) => `<button data-preset="${p}" class="${p === settings.preset ? 'on' : ''}">${PRESET_NAMES[p]}</button>`).join('')}</div>
     <label class="row"><span>Auto-Qualität<small>${autoOff ? 'Reduziert: ' + autoOff : 'Schaltet bei Rucklern die teuersten Effekte zuerst ab'}</small></span><input type="checkbox" id="mAuto" ${settings.auto ? 'checked' : ''}></label>
@@ -71,44 +71,51 @@ export class Input {
       if (document.pointerLockElement !== canvas) { canvas.requestPointerLock?.(); return; }
       if (e.button === 0) cb.breakBlock(); else if (e.button === 2) cb.placeBlock();
     });
-    // Touch: links Joystick, rechts umsehen; Tippen = setzen, Halten = abbauen
+    // Touch (Hochformat, daumenfreundlich): Joystick links unten, Tasten rechts unten, überall sonst umsehen
     let joy = null, look = null;
+    const rest = () => { // Ruheposition des Joysticks über der Blockleiste
+      if (joy) return;
+      const hb = $('hotbar').getBoundingClientRect();
+      stick.style.left = '96px'; stick.style.top = (hb.top || innerHeight - 80) - 96 + 'px'; knob.style.transform = '';
+    };
+    const touchMode = () => { if (!document.body.classList.contains('touch')) { document.body.classList.add('touch'); this.autoJump = true; rest(); } };
+    if (matchMedia('(pointer: coarse)').matches) setTimeout(touchMode, 0);
+    addEventListener('resize', rest);
     canvas.addEventListener('pointerdown', (e) => {
       if (e.pointerType === 'mouse') return;
-      document.body.classList.add('touch'); this.autoJump = true;
+      touchMode();
       canvas.setPointerCapture(e.pointerId);
-      if (!joy && e.clientX < innerWidth * 0.4 && e.clientY > innerHeight * 0.3) {
+      if (!joy && e.clientX < innerWidth * 0.5 && e.clientY > innerHeight * 0.55) {
         joy = { id: e.pointerId, x: e.clientX, y: e.clientY };
-        stick.style.display = 'block'; stick.style.left = e.clientX + 'px'; stick.style.top = e.clientY + 'px'; knob.style.transform = '';
-      } else if (!look) {
-        look = { id: e.pointerId, x: e.clientX, y: e.clientY, moved: 0, t: performance.now(), held: false };
-        look.timer = setInterval(() => { if (look && look.moved < 12 && performance.now() - look.t > 380) { look.held = true; cb.breakBlock(); } }, 280);
-      }
+        stick.style.left = e.clientX + 'px'; stick.style.top = e.clientY + 'px'; stick.classList.add('on');
+      } else if (!look) look = { id: e.pointerId, x: e.clientX, y: e.clientY };
     });
     canvas.addEventListener('pointermove', (e) => {
       if (joy && e.pointerId === joy.id) {
-        let dx = (e.clientX - joy.x) / 50, dy = (e.clientY - joy.y) / 50; const l = Math.hypot(dx, dy);
+        let dx = (e.clientX - joy.x) / 56, dy = (e.clientY - joy.y) / 56; const l = Math.hypot(dx, dy);
         if (l > 1) { dx /= l; dy /= l; }
-        this.mx = dx; this.mz = -dy; this.sprint = l > 1.5;
-        knob.style.transform = `translate(${dx * 34}px, ${dy * 34}px)`;
+        this.mx = dx; this.mz = -dy; this.sprint = l > 1.6;
+        knob.style.transform = `translate(${dx * 40}px, ${dy * 40}px)`;
       } else if (look && e.pointerId === look.id) {
-        const dx = e.clientX - look.x, dy = e.clientY - look.y;
-        look.x = e.clientX; look.y = e.clientY; look.moved += Math.abs(dx) + Math.abs(dy);
-        this.lookX += dx * 0.0055; this.lookY += dy * 0.0055;
+        this.lookX += (e.clientX - look.x) * 0.0058; this.lookY += (e.clientY - look.y) * 0.0058;
+        look.x = e.clientX; look.y = e.clientY;
       }
     });
     const end = (e) => {
-      if (joy && e.pointerId === joy.id) { joy = null; this.mx = this.mz = 0; this.sprint = false; stick.style.display = 'none'; }
-      else if (look && e.pointerId === look.id) {
-        clearInterval(look.timer);
-        if (!look.held && look.moved < 12 && performance.now() - look.t < 300) cb.placeBlock();
-        look = null;
-      }
+      if (joy && e.pointerId === joy.id) { joy = null; this.mx = this.mz = 0; this.sprint = false; stick.classList.remove('on'); rest(); }
+      else if (look && e.pointerId === look.id) look = null;
     };
     canvas.addEventListener('pointerup', end); canvas.addEventListener('pointercancel', end);
-    const jb = $('jumpBtn');
-    jb.addEventListener('pointerdown', (e) => { e.preventDefault(); this.jump = true; });
-    jb.addEventListener('pointerup', () => { this.jump = false; }); jb.addEventListener('pointercancel', () => { this.jump = false; });
+    // Aktionstasten: gedrückt halten wiederholt (Abbauen/Setzen)
+    const hold = (id, down, up, repeat) => {
+      const el = $(id); let t = 0;
+      const stop = () => { clearInterval(t); t = 0; el.classList.remove('down'); up?.(); };
+      el.addEventListener('pointerdown', (e) => { e.preventDefault(); touchMode(); el.setPointerCapture(e.pointerId); el.classList.add('down'); down(); if (repeat) t = setInterval(down, repeat); });
+      el.addEventListener('pointerup', stop); el.addEventListener('pointercancel', stop);
+    };
+    hold('jumpBtn', () => { this.jump = true; }, () => setTimeout(() => { this.jump = false; }, 120)); // kurzes Antippen zählt auch
+    hold('breakBtn', () => cb.breakBlock(), null, 260);
+    hold('placeBtn', () => cb.placeBlock(), null, 260);
     $('menuBtn').addEventListener('click', () => cb.menu());
   }
 }

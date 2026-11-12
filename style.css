@@ -9,13 +9,22 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #0d1117; col
 #cross::after { content: ""; position: absolute; left: 50%; top: 50%; width: 2px; height: 2px; margin: -1px; background: #fff; border-radius: 50%; }
 #info { position: absolute; left: max(10px, env(safe-area-inset-left)); top: max(8px, env(safe-area-inset-top)); padding: 4px 9px; border-radius: 8px; background: rgba(0, 0, 0, 0.35); font-size: 12px; font-variant-numeric: tabular-nums; color: #dfe6ec; }
 #menuBtn { position: absolute; right: max(10px, env(safe-area-inset-right)); top: max(8px, env(safe-area-inset-top)); width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel); color: var(--text); font-size: 20px; }
-#stick { position: absolute; left: 0; top: 0; width: 120px; height: 120px; margin: -60px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.35); background: rgba(255, 255, 255, 0.07); display: none; }
-#knob { position: absolute; left: 50%; top: 50%; width: 52px; height: 52px; margin: -26px; border-radius: 50%; background: rgba(255, 255, 255, 0.45); }
-#jumpBtn { position: absolute; right: max(22px, env(safe-area-inset-right)); bottom: 108px; width: 68px; height: 68px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.35); background: rgba(255, 255, 255, 0.1); color: #fff; font-size: 24px; display: none; }
-body.touch #jumpBtn { display: block; }
+#stick { position: absolute; left: 96px; top: 70%; width: 148px; height: 148px; margin: -74px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.28); background: rgba(10, 14, 20, 0.28); display: none; opacity: 0.75; transition: opacity 0.15s; }
+#stick.on { opacity: 1; border-color: rgba(255, 255, 255, 0.5); }
+#knob { position: absolute; left: 50%; top: 50%; width: 64px; height: 64px; margin: -32px; border-radius: 50%; background: rgba(255, 255, 255, 0.5); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35); }
+body.touch #stick { display: block; }
+/* Aktionstasten als Daumenbogen rechts unten */
+#actions { position: absolute; right: max(14px, env(safe-area-inset-right)); bottom: calc(max(10px, env(safe-area-inset-bottom)) + 84px); width: 176px; height: 176px; display: none; }
+body.touch #actions { display: block; }
+#actions button { position: absolute; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.34); background: rgba(10, 14, 20, 0.38); color: #fff; font: 600 10px/1 system-ui, sans-serif; letter-spacing: 0.02em; touch-action: none; }
+#actions button.down { background: rgba(127, 214, 107, 0.55); border-color: var(--accent); transform: scale(0.94); }
+#actions svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+#jumpBtn { right: 0; bottom: 0; width: 84px; height: 84px; }
+#breakBtn { right: 96px; bottom: 6px; width: 72px; height: 72px; }
+#placeBtn { right: 6px; bottom: 96px; width: 72px; height: 72px; }
 #hotbar { position: absolute; left: 50%; bottom: max(10px, env(safe-area-inset-bottom)); transform: translateX(-50%); display: flex; gap: 5px; padding: 6px; border-radius: 14px; background: var(--panel); border: 1px solid var(--line); max-width: calc(100vw - 16px); overflow-x: auto; scrollbar-width: none; }
 #hotbar::-webkit-scrollbar { display: none; }
-#hotbar canvas { width: 40px; height: 40px; border-radius: 8px; flex: none; outline: 2px solid transparent; outline-offset: 1px; image-rendering: auto; }
+#hotbar canvas { width: 40px; height: 40px; scroll-snap-align: center; border-radius: 8px; flex: none; outline: 2px solid transparent; outline-offset: 1px; image-rendering: auto; }
 #hotbar canvas.sel { outline-color: var(--accent); }
 #toast { position: absolute; left: 50%; top: 62px; transform: translateX(-50%); padding: 6px 12px; border-radius: 10px; background: var(--panel); font-size: 13px; opacity: 0; transition: opacity 0.3s; white-space: nowrap; }
 #toast.on { opacity: 1; }
@@ -38,3 +47,6 @@ body.touch #jumpBtn { display: block; }
 .row input[type=range] { width: 46%; accent-color: var(--accent); }
 .grid2 { display: grid; grid-template-columns: 1fr 1fr; column-gap: 16px; }
 @media (max-width: 420px) { .grid2 { grid-template-columns: 1fr; } }
+body.touch #hotbar { left: max(8px, env(safe-area-inset-left)); right: max(8px, env(safe-area-inset-right)); transform: none; max-width: none; gap: 6px; padding: 7px; scroll-snap-type: x proximity; }
+body.touch #hotbar canvas { width: 52px; height: 52px; border-radius: 10px; }
+body.touch #menuBtn { width: 52px; height: 52px; font-size: 22px; }

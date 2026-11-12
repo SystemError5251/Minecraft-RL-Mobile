@@ -124,7 +124,7 @@ async function start() {
     } else {
       cam.pos = eyeOverride || player.eye(); cam.fwd = player.forward();
       lookAt(cam.view, cam.pos, [cam.pos[0] + cam.fwd[0], cam.pos[1] + cam.fwd[1], cam.pos[2] + cam.fwd[2]], [0, 1, 0]);
-      const vfov = fov * Math.PI / 180 * (aspect < 1 ? 1.15 : 1);
+      const vfov = fov * Math.PI / 180 * (aspect < 1 ? 1.3 : 1) // Hochformat: größerer vertikaler Blickwinkel;
       perspective(cam.proj, vfov, aspect, cam.near, cam.far);
       world.update(cam.pos[0], cam.pos[2], q.dist);
     }
