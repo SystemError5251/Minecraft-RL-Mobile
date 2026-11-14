@@ -118,3 +118,37 @@ body.portrait #rotate { display: flex; }
 #rotate b { display: block; font-size: 20px; }
 #rotate span { color: var(--dim); font-size: 14px; }
 .fields { display: grid; grid-template-columns: 1.4fr 1fr; gap: 8px; }
+
+/* ---- Chat, Debug, Erfahrung, Mehrspieler ---- */
+#flash { position: fixed; inset: 0; pointer-events: none; background: #fff; opacity: 0; transition: opacity 0.1s; }
+#topbtns button:disabled, .seg button:disabled { opacity: 0.4; }
+#xp { display: none; align-items: center; gap: 6px; padding: 0 4px; }
+body.survival #xp { display: flex; }
+#xp > div { flex: 1; height: 5px; border-radius: 3px; background: rgba(0, 0, 0, 0.5); overflow: hidden; }
+#xpfill { height: 100%; width: 0; background: #9be24f; }
+#xplevel { font: 700 12px/1 system-ui, sans-serif; color: #b6f36a; text-shadow: 0 1px 2px #000; min-width: 8px; }
+body.spectator #bottom, body.spectator #cross, body.spectator #placeBtn, body.spectator #breakBtn, body.spectator #invBtn { display: none !important; }
+#debug { position: absolute; left: calc(var(--sl) + 10px); top: calc(var(--st) + 40px); margin: 0; padding: 6px 9px; border-radius: 8px; background: rgba(0, 0, 0, 0.5); font: 11px/1.45 ui-monospace, Menlo, Consolas, monospace; color: #e6edf3; white-space: pre; }
+#chatlog { position: absolute; left: calc(var(--sl) + 10px); top: calc(var(--st) + 44px); width: min(46vw, 420px); max-height: 38vh; overflow: hidden; display: flex; flex-direction: column; gap: 2px; font-size: 13px; pointer-events: none; }
+#debug:not([hidden]) ~ #chatlog { left: 46%; top: calc(var(--st) + 70px); }
+#chatlog div { align-self: flex-start; padding: 2px 7px; border-radius: 6px; background: rgba(0, 0, 0, 0.45); transition: opacity 0.6s; overflow-wrap: anywhere; }
+#chatlog div.old { opacity: 0; }
+body.chat #chatlog { overflow-y: auto; pointer-events: auto; touch-action: pan-y; }
+body.chat #chatlog div.old { opacity: 1; }
+#chatlog .c1 { color: #ff9a8f; } #chatlog .c2 { color: #ffe08a; } #chatlog .c3 { color: #b8c4d0; }
+#chatbar { position: absolute; left: calc(var(--sl) + 10px); right: calc(var(--sr) + 10px); top: calc(var(--st) + 8px); display: none; gap: 6px; pointer-events: auto; z-index: 5; }
+body.chat #chatbar { display: flex; }
+body.chat #topbtns, body.chat #info { visibility: hidden; }
+body.chat #chatlog { top: calc(var(--st) + 64px); }
+#chatbar input { flex: 1; min-width: 0; min-height: 48px; padding: 0 12px; border-radius: 11px; border: 1px solid var(--line); background: var(--panel); color: var(--text); font: inherit; font-size: 16px; user-select: text; -webkit-user-select: text; }
+#chatbar button { min-width: 48px; min-height: 48px; padding: 0 12px; border-radius: 11px; border: 1px solid var(--line); background: var(--panel); }
+#labels span.name { padding: 1px 7px; border-radius: 6px; background: rgba(0, 0, 0, 0.5); color: #fff; font-size: 12px; transform: translate(-50%, -100%); }
+.err { color: #ff9a8f !important; margin-top: 8px !important; }
+.skins { display: flex; gap: 6px; margin-top: 3px; }
+.skins button { flex: 1; min-width: 0; padding: 0; background: var(--c) !important; border-color: transparent; }
+.skins button.on { outline: 3px solid var(--accent); outline-offset: 1px; }
+.roombox { display: flex; gap: 12px; align-items: center; margin-top: 8px; }
+.roombox canvas { width: 132px; height: 132px; border-radius: 8px; flex: none; image-rendering: pixelated; }
+.roombox .code { display: block; font: 700 26px/1.2 ui-monospace, Menlo, Consolas, monospace; letter-spacing: 0.12em; }
+.roombox small { display: block; color: var(--dim); font-size: 12px; }
+.roombox .link { overflow-wrap: anywhere; user-select: text; -webkit-user-select: text; margin-top: 4px; }

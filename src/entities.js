@@ -68,12 +68,13 @@ export class Mob {
     Object.assign(this, { type, def: d, pos: [x, y, z], prev: [x, y, z], vel: [0, 0, 0], w: d.w, h: d.h, yaw: Math.random() * 6.28, hp: d.hp, phase: 0, hurt: 0, cd: 0, wanderT: 0, moving: false, dirX: 0, dirZ: 0, avoidT: 0, avoidS: 1, stuck: 0, lit: 1, age: 0, dead: false });
   }
   tick(g) {
-    const d = this.def, p = this.pos, pl = g.player.pos, world = g.world;
+    const d = this.def, p = this.pos, world = g.world;
     this.age++;
     if (this.hurt > 0) this.hurt--;
     if (this.cd > 0) this.cd--;
-    const dx = pl[0] - p[0], dz = pl[2] - p[2], dy = pl[1] - p[1], dist = Math.hypot(dx, dz);
-    const chase = d.hostile && g.mode === 'survival' && !g.dead && dist < 26 && Math.abs(dy) < 12;
+    const near = g.nearestPlayer(p), pl = near ? near.pos : p; // nächster Spieler (für Verfolgung und Verschwinden)
+    const dx = pl[0] - p[0], dz = pl[2] - p[2], dy = pl[1] - p[1], dist = near ? Math.hypot(dx, dz) : 999;
+    const chase = d.hostile && near && g.canTarget(near) && dist < 26 && Math.abs(dy) < 12;
     let sp = 0;
     if (chase) { this.dirX = dx / (dist || 1); this.dirZ = dz / (dist || 1); sp = dist > 0.9 ? d.speed : 0; }
     else {
@@ -96,7 +97,7 @@ export class Mob {
     }
     if (this.inWater) this.vel[1] = Math.max(this.vel[1], 1.2);
     stepBody(this, world);
-    if (chase && dist < this.w + 0.95 && dy > -this.h - 0.2 && dy < 1.9 && this.cd <= 0) { this.cd = 20; g.hurtPlayer(d.dmg, [dx / (dist || 1), dz / (dist || 1)]); }
+    if (chase && dist < this.w + 0.95 && dy > -this.h - 0.2 && dy < 1.9 && this.cd <= 0) { this.cd = 30; g.hurtPlayer(near, d.dmg * g.mobDamage(), [dx / (dist || 1), dz / (dist || 1)]); }
     if (this.age % 10 === 0) {
       this.lit = skyAbove(world, Math.floor(p[0]), Math.floor(p[1]), Math.floor(p[2])) ? 1 : 0.22;
       // Gegner lösen sich im Tageslicht auf; weit entfernte Figuren verschwinden
@@ -106,9 +107,10 @@ export class Mob {
   }
   damage(n, kx, kz, g) {
     this.hp -= n; this.hurt = 6; this.vel[0] = kx * 6; this.vel[2] = kz * 6; this.vel[1] = 5;
-    if (this.hp > 0) return;
+    if (this.hp > 0) return false;
     this.dead = true;
     for (const [id, a, b] of this.def.drops) { const c = a + Math.floor(Math.random() * (b - a + 1)); if (c > 0) g.spawnDrop(id, c, undefined, this.pos[0], this.pos[1] + 0.4, this.pos[2]); }
+    return true;
   }
 }
 
@@ -122,22 +124,27 @@ export class Drop {
     if (this.onGround) { this.vel[0] *= 0.6; this.vel[2] *= 0.6; }
     if (this.age % 20 === 0) this.lit = skyAbove(g.world, Math.floor(this.pos[0]), Math.floor(this.pos[1]), Math.floor(this.pos[2])) ? 1 : 0.22;
     if (this.age > this.ttl || this.pos[1] < -10) { this.dead = true; return; }
-    if (this.age < this.delay || g.dead) return;
-    const pl = g.player.pos, d = Math.hypot(pl[0] - this.pos[0], pl[2] - this.pos[2]), dy = this.pos[1] - pl[1];
-    if (d < 1.5 && dy > -1.6 && dy < 2.3) {
-      const left = g.inv.add(this.item.id, this.item.n, this.item.d);
-      if (left !== this.item.n) g.invChanged = true;
-      if (left <= 0) this.dead = true; else this.item.n = left;
-    } else if (d < 3 && Math.abs(dy) < 3) { const f = 0.25 / d; this.vel[0] += (pl[0] - this.pos[0]) * f; this.vel[2] += (pl[2] - this.pos[2]) * f; } // leichter Sog zum Spieler
+    if (this.age < this.delay) return;
+    for (const pl of g.players.values()) {
+      if (!g.canPickup(pl)) continue;
+      const d = Math.hypot(pl.pos[0] - this.pos[0], pl.pos[2] - this.pos[2]), dy = this.pos[1] - pl.pos[1];
+      if (d < 1.5 && dy > -1.6 && dy < 2.3) {
+        const left = pl.inv.add(this.item.id, this.item.n, this.item.d);
+        if (left !== this.item.n) pl.invDirty = true;
+        if (left <= 0) { this.dead = true; return; }
+        this.item.n = left;
+      } else if (d < 3 && Math.abs(dy) < 3) { const f = 0.25 / d; this.vel[0] += (pl.pos[0] - this.pos[0]) * f; this.vel[2] += (pl.pos[2] - this.pos[2]) * f; } // leichter Sog zum Spieler
+    }
   }
 }
 
 // ---- Spawnen: nachts an der Oberfläche und jederzeit in Höhlen Gegner, tagsüber Tiere; Limit pro Chunk ----
 const MAX_PER_CHUNK = 2, MAX_HOSTILE = 6, MAX_ANIMALS = 8;
-export function trySpawn(g) {
-  const world = g.world, pl = g.player.pos, a = Math.random() * 6.283, r = 24 + Math.random() * 24;
+export function trySpawn(g, player) {
+  const world = g.world, pl = player.pos, a = Math.random() * 6.283, r = 24 + Math.random() * 24;
   const x = Math.floor(pl[0] + Math.sin(a) * r), z = Math.floor(pl[2] + Math.cos(a) * r);
-  if (!world.isLoaded(x, z)) return;
+  if (!world.isLoaded(x, z) || !g.rules.doMobSpawning) return;
+  const cap = Math.max(1, g.players.size);
   const cx = Math.floor(x / CS), cz = Math.floor(z / CS);
   let inChunk = 0, hostile = 0, animals = 0;
   for (const m of g.mobs) { if (Math.floor(m.pos[0] / CS) === cx && Math.floor(m.pos[2] / CS) === cz) inChunk++; if (m.def.hostile) hostile++; else animals++; }
@@ -145,16 +152,16 @@ export function trySpawn(g) {
   let top = CH - 1;
   while (top > 1 && !isSolid(world.getBlock(x, top, z))) top--;
   const free = (y) => world.getBlock(x, y, z) === 0 && world.getBlock(x, y + 1, z) === 0 && world.getBlock(x, y + 2, z) === 0;
-  const day = g.isDay(), peaceful = g.mode !== 'survival';
-  if (!peaceful && hostile < MAX_HOSTILE && Math.random() < 0.5 && top > 16) { // Höhle: von zufälliger Tiefe nach unten einen Boden suchen
+  const day = g.isDay(), peaceful = g.difficulty === 0;
+  if (!peaceful && hostile < MAX_HOSTILE * cap && Math.random() < 0.5 && top > 16) { // Höhle: von zufälliger Tiefe nach unten einen Boden suchen
     let y = 6 + Math.floor(Math.random() * Math.max(1, top - 14));
-    for (let i = 0; i < 14 && y > 3; i++, y--) if (isSolid(world.getBlock(x, y - 1, z)) && free(y)) { g.mobs.push(new Mob(Math.random() < 0.7 ? 'krabbler' : 'koloss', x + 0.5, y, z + 0.5)); return; }
+    for (let i = 0; i < 14 && y > 3; i++, y--) if (isSolid(world.getBlock(x, y - 1, z)) && free(y)) { g.addMob(new Mob(Math.random() < 0.7 ? 'krabbler' : 'koloss', x + 0.5, y, z + 0.5)); return; }
     return;
   }
   if (!free(top + 1)) return;
   const ground = world.getBlock(x, top, z);
-  if (!day && !peaceful && hostile < MAX_HOSTILE) g.mobs.push(new Mob(Math.random() < 0.72 ? 'wicht' : 'koloss', x + 0.5, top + 1, z + 0.5));
-  else if (day && animals < MAX_ANIMALS && ground === B.GRASS && Math.random() < 0.5) g.mobs.push(new Mob(Math.random() < 0.6 ? 'bock' : 'hupfer', x + 0.5, top + 1, z + 0.5));
+  if (!day && !peaceful && hostile < MAX_HOSTILE * cap) g.addMob(new Mob(Math.random() < 0.72 ? 'wicht' : 'koloss', x + 0.5, top + 1, z + 0.5));
+  else if (day && animals < MAX_ANIMALS * cap && ground === B.GRASS && Math.random() < 0.5) g.addMob(new Mob(Math.random() < 0.6 ? 'bock' : 'hupfer', x + 0.5, top + 1, z + 0.5));
 }
 
 // Strahl gegen die Figuren-Boxen (für Angriffe)
@@ -197,18 +204,31 @@ export class BoxBatch {
       }
     }
   }
-  addMob(m, al) {
-    const x = m.prev[0] + (m.pos[0] - m.prev[0]) * al, y = m.prev[1] + (m.pos[1] - m.prev[1]) * al, z = m.prev[2] + (m.pos[2] - m.prev[2]) * al;
-    const c = Math.cos(m.yaw), s = Math.sin(m.yaw), red = m.hurt > 0 ? 1 : 0;
-    for (const p of m.def.parts) {
-      const oz = p[2] + (p[9] !== null ? Math.sin(m.phase + p[9]) * 0.14 : 0);
-      this.box(x + p[0] * c - oz * s, y + p[1], z + p[0] * s + oz * c, p[3], p[4], p[5], m.yaw, null, p[6] + red * 0.8, p[7] * (1 - red * 0.5), p[8] * (1 - red * 0.5), m.lit);
+  // Figur zeichnen: def = MOBS[typ] oder Spieler-Modell; phase = Laufanimation; red = Trefferblitz
+  addModel(def, x, y, z, yaw, phase, red, lit, tint) {
+    const c = Math.cos(yaw), s = Math.sin(yaw);
+    for (const p of def.parts) {
+      const oz = p[2] + (p[9] !== null ? Math.sin(phase + p[9]) * 0.14 : 0);
+      const col = tint && p[10] ? tint[p[10] - 1] : p;
+      const r = tint && p[10] ? col[0] : p[6], g = tint && p[10] ? col[1] : p[7], b = tint && p[10] ? col[2] : p[8];
+      this.box(x + p[0] * c - oz * s, y + p[1], z + p[0] * s + oz * c, p[3], p[4], p[5], yaw, null, r + red * 0.8, g * (1 - red * 0.5), b * (1 - red * 0.5), lit);
     }
   }
-  addDrop(d, al, time) {
-    const x = d.prev[0] + (d.pos[0] - d.prev[0]) * al, y = d.prev[1] + (d.pos[1] - d.prev[1]) * al + 0.2 + Math.sin(time * 2.4 + d.pos[0]) * 0.06, z = d.prev[2] + (d.pos[2] - d.prev[2]) * al;
-    const it = ITEMS[d.item.id];
-    if (it.block) this.box(x, y, z, 0.3, 0.3, 0.3, time * 1.3, BLOCKS[d.item.id].faces, 1, 1, 1, d.lit);
-    else this.box(x, y, z, 0.26, 0.26, 0.07, time * 1.3, null, it.color[0], it.color[1], it.color[2], d.lit);
+  addItem(id, x, y, z, time, lit) {
+    const it = ITEMS[id];
+    if (!it) return;
+    y += 0.2 + Math.sin(time * 2.4 + x) * 0.06;
+    if (it.block) this.box(x, y, z, 0.3, 0.3, 0.3, time * 1.3, BLOCKS[id].faces, 1, 1, 1, lit);
+    else this.box(x, y, z, 0.26, 0.26, 0.07, time * 1.3, null, it.color[0], it.color[1], it.color[2], lit);
   }
 }
+// Spieler-Modell: Teile mit Farbslot (11. Wert: 1 = Hemd, 2 = Hose, 3 = Haut, 4 = Haar) für einfache Skins
+export const PLAYER_MODEL = { parts: [
+  [-0.13, 0.36, 0, 0.22, 0.72, 0.22, 0, 0, 0, 0, 2], [0.13, 0.36, 0, 0.22, 0.72, 0.22, 0, 0, 0, 3.14, 2], [0, 1.08, 0, 0.5, 0.72, 0.26, 0, 0, 0, null, 1],
+  [-0.35, 1.08, 0, 0.18, 0.72, 0.2, 0, 0, 0, 3.14, 3], [0.35, 1.08, 0, 0.18, 0.72, 0.2, 0, 0, 0, 0, 3], [0, 1.64, 0, 0.42, 0.4, 0.42, 0, 0, 0, null, 3], [0, 1.82, 0.02, 0.44, 0.1, 0.44, 0, 0, 0, null, 4],
+  [-0.1, 1.66, -0.215, 0.07, 0.06, 0.02, 0.05, 0.05, 0.08, null], [0.1, 1.66, -0.215, 0.07, 0.06, 0.02, 0.05, 0.05, 0.08, null]] };
+export const SKINS = [ // Hemd, Hose, Haut, Haar
+  { name: 'Wald', c: [[0.2, 0.55, 0.25], [0.25, 0.2, 0.15], [0.85, 0.65, 0.5], [0.3, 0.18, 0.08]] }, { name: 'Ozean', c: [[0.15, 0.4, 0.75], [0.15, 0.17, 0.3], [0.6, 0.42, 0.3], [0.08, 0.06, 0.05]] },
+  { name: 'Glut', c: [[0.8, 0.25, 0.15], [0.2, 0.2, 0.22], [0.93, 0.76, 0.62], [0.75, 0.55, 0.2]] }, { name: 'Sand', c: [[0.85, 0.72, 0.4], [0.4, 0.3, 0.2], [0.45, 0.3, 0.22], [0.1, 0.08, 0.07]] },
+  { name: 'Violett', c: [[0.5, 0.25, 0.75], [0.18, 0.15, 0.25], [0.8, 0.6, 0.48], [0.9, 0.9, 0.85]] }, { name: 'Schiefer', c: [[0.35, 0.38, 0.42], [0.12, 0.13, 0.15], [0.7, 0.52, 0.4], [0.5, 0.2, 0.1]] }];
+export const MOB_TYPES = Object.keys(MOBS);

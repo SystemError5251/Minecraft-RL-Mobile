@@ -5,8 +5,17 @@
   "type": "module",
   "description": "Voxel-Spiel für den mobilen Browser mit prozeduralen Texturen und Shader-Grafik (WebGL2)",
   "scripts": {
-    "build": "node tools/gen-textures.mjs",
-    "start": "node tools/gen-textures.mjs && node tools/serve.mjs 8080",
+    "build": "node tools/gen-textures.mjs && npm run build:core",
+    "build:core": "esbuild core/worker.ts --bundle --format=iife --target=es2020 --outfile=build/server.worker.js && esbuild server/index.ts --bundle --platform=node --format=esm --target=node18 --external:ws --outfile=server/dist/server.mjs",
+    "start": "npm run build && node tools/serve.mjs 8080",
+    "server": "node server/dist/server.mjs",
+    "signaling": "node signaling/server.mjs",
     "screenshots": "node tools/screenshots.mjs"
+  },
+  "devDependencies": {
+    "@types/ws": "^8.18.2",
+    "esbuild": "^0.28.2",
+    "typescript": "^7.0.2",
+    "ws": "^8.23.0"
   }
 }

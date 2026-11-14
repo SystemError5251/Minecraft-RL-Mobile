@@ -16,10 +16,12 @@
 <canvas id="gl"></canvas>
 <div id="underwater"></div>
 <div id="hurt"></div>
+<div id="flash"></div>
 <div id="hud">
   <div id="cross"><div id="ring"><div></div></div></div>
   <div id="info"></div>
   <div id="topbtns">
+    <button id="chatBtn" aria-label="Chat"><svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></svg></button>
     <button id="invBtn" aria-label="Inventar"><svg viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="2.5"/><path d="M3.5 9.5h17M9.5 3.5v17M14.5 3.5v17M3.5 14.5h17"/></svg></button>
     <button id="menuBtn" aria-label="Menü"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
   </div>
@@ -31,16 +33,21 @@
     <button id="jumpBtn" aria-label="Springen"><svg viewBox="0 0 24 24"><path d="M5 14l7-7 7 7M5 20l7-7 7 7"/></svg><span>Springen</span></button>
   </div>
   <div id="bottom">
+    <div id="xp"><b id="xplevel"></b><div><div id="xpfill"></div></div></div>
     <div id="stats"><canvas id="hearts" width="400" height="40"></canvas><div><canvas id="air" width="400" height="40"></canvas><canvas id="food" width="400" height="40"></canvas></div></div>
     <div id="hotbar"></div>
   </div>
   <div id="toast"></div>
+  <pre id="debug" hidden></pre>
+  <div id="chatlog"></div>
+  <div id="chatbar"><input id="chatin" maxlength="256" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Nachricht oder /befehl" aria-label="Chat-Eingabe"><button id="chatTab" aria-label="Vervollständigen">Tab</button><button id="chatUp" aria-label="Vorheriger Eintrag">↑</button><button id="chatSend">Senden</button><button id="chatClose" aria-label="Chat schließen">×</button></div>
 </div>
 <div id="labels"></div>
 <div id="inv" class="overlay" hidden></div>
 <div id="menu" class="overlay" hidden></div>
 <div id="death" class="overlay" hidden><div class="panel narrow"><h1>Du bist gestorben</h1><p>Deine Items liegen am Todesort und können wieder eingesammelt werden.</p><button class="wide" id="respawnBtn">Neu starten</button></div></div>
 <div id="title" class="overlay" hidden></div>
+<div id="disc" class="overlay" hidden><div class="panel narrow"><h1>Verbindung beendet</h1><p id="discMsg"></p><button class="wide" id="discBtn">Zum Hauptmenü</button></div></div>
 <div id="rotate"><div><svg viewBox="0 0 64 64"><rect x="20" y="6" width="24" height="42" rx="4"/><path d="M8 40a26 26 0 0 0 22 18M30 58l-6-7M30 58l-9 2"/></svg><b>Bitte Gerät drehen</b><span>Kantenhain läuft im Querformat.</span></div></div>
 <div id="loading">Welt wird erzeugt …</div>
 <script type="module" src="src/main.js"></script>

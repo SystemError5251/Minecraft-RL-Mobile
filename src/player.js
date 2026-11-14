@@ -2,7 +2,7 @@
 import { B, isSolid } from './blocks.js';
 const W = 0.3, HGT = 1.8, EYE = 1.62;
 export class Player {
-  constructor() { this.pos = [0, 60, 0]; this.vel = [0, 0, 0]; this.yaw = 0; this.pitch = 0; this.onGround = false; this.inWater = false; this.headInWater = false; this.flying = false; this.peakY = 0; this.landed = 0; }
+  constructor() { this.pos = [0, 60, 0]; this.vel = [0, 0, 0]; this.yaw = 0; this.pitch = 0; this.onGround = false; this.inWater = false; this.headInWater = false; this.flying = false; this.peakY = 0; this.landed = 0; this.speedMul = 1; this.jumpMul = 1; this.noclip = false; }
   eye() { return [this.pos[0], this.pos[1] + EYE, this.pos[2]]; }
   forward() { const cp = Math.cos(this.pitch); return [Math.sin(this.yaw) * cp, Math.sin(this.pitch), -Math.cos(this.yaw) * cp]; }
   collides(world, x, y, z) {
@@ -19,14 +19,14 @@ export class Player {
     this.inWater = world.getBlock(Math.floor(p[0]), Math.floor(p[1] + 0.4), Math.floor(p[2])) === B.WATER;
     this.headInWater = world.getBlock(Math.floor(p[0]), Math.floor(p[1] + EYE + 0.1), Math.floor(p[2])) === B.WATER;
     const s = Math.sin(this.yaw), c = Math.cos(this.yaw);
-    const sp = this.flying ? 10 : (this.inWater ? 2.6 : 4.6) * (inp.sprint ? 1.5 : 1);
+    const sp = (this.flying ? 10 : (this.inWater ? 2.6 : 4.6) * (inp.sprint ? 1.5 : 1)) * this.speedMul;
     const tx = (inp.mx * c + inp.mz * s) * sp, tz = (inp.mx * s - inp.mz * c) * sp;
     const acc = this.flying || this.onGround || this.inWater ? 14 : 4, k = Math.min(1, acc * dt);
     v[0] += (tx - v[0]) * k; v[2] += (tz - v[2]) * k;
     const wasGround = this.onGround;
     if (this.flying) v[1] += (((inp.jump ? 1 : 0) - (inp.crouch ? 1 : 0)) * 8 - v[1]) * Math.min(1, 12 * dt);
     else if (this.inWater) { v[1] += -6 * dt; v[1] *= Math.max(0, 1 - 3 * dt); if (inp.jump) v[1] = Math.min(v[1] + 22 * dt, 3.2); }
-    else { v[1] -= 26 * dt; if (inp.jump && this.onGround) v[1] = 8.4; }
+    else { v[1] -= 26 * dt; if (inp.jump && this.onGround) v[1] = 8.4 * this.jumpMul; }
     v[1] = Math.max(v[1], -50);
     this.onGround = false;
     const steps = Math.ceil(Math.max(Math.abs(v[0]), Math.abs(v[1]), Math.abs(v[2])) * dt / 0.4) || 1, h = dt / steps;
@@ -34,7 +34,7 @@ export class Player {
     for (let i = 0; i < steps; i++) {
       for (const a of [1, 0, 2]) {
         const old = p[a]; p[a] += v[a] * h;
-        if (!this.collides(world, p[0], p[1], p[2])) continue;
+        if (this.noclip || !this.collides(world, p[0], p[1], p[2])) continue; // Zuschauer fliegen durch Blöcke
         const dir = Math.sign(v[a]);
         p[a] = old;
         if (a === 1) { if (v[1] < 0) this.onGround = true; v[1] = 0; continue; }

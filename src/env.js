@@ -37,6 +37,14 @@ export function computeEnv(time, viewDist, o = {}) {
     rayColor: scale(sunCol, mix(0.9, 0.35, high)),
     water: [0.035, 0.13, 0.13],
   };
+  const rain = o.rain || 0; // Regen: grauer Himmel, weniger Sonne, dichter Dunst
+  if (rain > 0) {
+    const g = [0.22 * day + 0.01, 0.25 * day + 0.012, 0.29 * day + 0.016];
+    env.zenith = mix3(env.zenith, scale(g, 0.7), rain * 0.85); env.horizon = mix3(env.horizon, g, rain * 0.85);
+    env.lightColor = scale(env.lightColor, 1 - 0.75 * rain); env.glow = scale(env.glow, 1 - 0.9 * rain); env.sunDisc = scale(env.sunDisc, 1 - rain);
+    env.ambSky = mix3(env.ambSky, scale(g, 0.9), rain * 0.7); env.fog[0] *= 1 + 2.2 * rain; env.rayStrength *= 1 - rain;
+  }
+  if (o.flash > 0) { env.ambSky = env.ambSky.map((v) => v + 1.2); env.horizon = env.horizon.map((v) => v + 0.8); }
   if (o.showcase) {
     env.skyOverride = [0.011, 0.012, 0.015, 1];
     env.fog = [0, 0.05, SEA, 1e6];

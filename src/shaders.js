@@ -514,3 +514,26 @@ void main() {
   vec3 col = base * (amb + uLightColor * max(dot(n, uLightDir), 0.0) * vis) + max(alb - 1.0, 0.0) * 2.0; // Farben > 1 leuchten (Augen)
   o = vec4(finalize(applyFog(col, vWP)), 1.0);
 }`;
+
+// Regen: Tropfen als schmale Quads rund um die Kamera, komplett aus gl_VertexID erzeugt
+export const RAIN_VS = `
+uniform mat4 uViewProj;
+uniform vec3 uCamPos;
+uniform float uTime;
+float h(float n) { return fract(sin(n) * 43758.5453); }
+void main() {
+  int i = gl_VertexID / 6, c = gl_VertexID - i * 6;
+  float fi = float(i);
+  vec3 box = vec3(26.0, 22.0, 26.0);
+  vec3 o = vec3(h(fi * 1.31), h(fi * 2.73 + 1.0), h(fi * 3.97 + 2.0)) * box;
+  o.y -= uTime * (24.0 + 8.0 * h(fi));
+  vec3 p = uCamPos + mod(o - uCamPos, box) - box * 0.5;
+  float x = (c == 1 || c == 2 || c == 4) ? 1.0 : 0.0, y = (c == 2 || c == 4 || c == 5) ? 1.0 : 0.0;
+  vec3 side = normalize(cross(vec3(0.0, 1.0, 0.0), p - uCamPos + vec3(0.001)));
+  p += side * (x - 0.5) * 0.035 + vec3(0.0, y * 0.8, 0.0);
+  gl_Position = uViewProj * vec4(p, 1.0);
+}`;
+export const RAIN_FS = `
+uniform float uRain;
+out vec4 o;
+void main() { o = vec4(finalize(uAmbSky * 1.6 + 0.1), 0.38 * uRain); }`;

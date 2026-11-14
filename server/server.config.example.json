@@ -1,0 +1,12 @@
+{
+  "port": 25580,
+  "maxPlayers": 8,
+  "whitelist": null,
+  "operators": ["DeinName"],
+  "worldName": "Serverwelt",
+  "seed": 1337,
+  "gamemode": "survival",
+  "cheats": true,
+  "viewDistance": 8,
+  "worldFile": "world.json"
+}

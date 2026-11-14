@@ -125,6 +125,7 @@ export class Renderer {
       cloud: this.compile(base, S.CLOUD_VS, S.CLOUD_FS),
       shadow: this.compile([], S.SHADOW_VS, S.SHADOW_FS, false),
       entity: this.compile(base, S.ENTITY_VS, S.ENTITY_FS),
+      rain: this.compile(q.direct ? ['DIRECT'] : [], S.RAIN_VS, S.RAIN_FS),
     };
     if (this.useFx) this.progs.fx = this.compile(fx, S.QUAD_VS, S.FX_FS);
     if (!q.direct) this.progs.composite = this.compile(this.useFx ? ['FX'] : [], S.QUAD_VS, S.COMPOSITE_FS);
@@ -428,6 +429,14 @@ export class Renderer {
       gl.bindVertexArray(c.water.vao);
       gl.drawElements(gl.TRIANGLES, c.water.quads * 6, gl.UNSIGNED_INT, 0);
       tris += c.water.quads * 2;
+    }
+    if (f.rain > 0.01) { // Regen über die Szene blenden
+      u = this.use(P.rain, f);
+      gl.uniform1f(u.uRain, f.rain);
+      gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); gl.depthMask(false);
+      gl.bindVertexArray(this.emptyVao);
+      gl.drawArrays(gl.TRIANGLES, 0, 6 * Math.round(900 * f.rain));
+      gl.depthMask(true);
     }
     gl.disable(gl.BLEND); gl.enable(gl.CULL_FACE);
     this.stats.chunks = vis.length; this.stats.tris = tris;
