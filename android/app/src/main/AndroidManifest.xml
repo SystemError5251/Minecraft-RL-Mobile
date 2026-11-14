@@ -7,12 +7,12 @@
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:theme="@style/AppTheme">
-        <!-- Hochformat fest; Größen-/Tastaturänderungen starten die Activity nicht neu -->
+        <!-- Querformat fest (beide Drehrichtungen); Größen-/Tastaturänderungen starten die Activity nicht neu -->
         <activity
             android:name=".MainActivity"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboard|keyboardHidden|navigation|uiMode|density"
             android:exported="true"
-            android:screenOrientation="portrait">
+            android:screenOrientation="sensorLandscape">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

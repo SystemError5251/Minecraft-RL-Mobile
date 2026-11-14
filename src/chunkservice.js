@@ -4,13 +4,18 @@ import { meshChunk } from './mesher.js';
 export function createService(post) {
   const chunks = new Map(), edited = new Set();
   const key = (x, z) => x + ',' + z;
-  const get = (cx, cz) => { const k = key(cx, cz); let c = chunks.get(k); if (!c) { c = generateChunk(cx, cz); chunks.set(k, c); } return c; };
+  let edits = {}; // gespeicherte Änderungen des Spielers: Chunk-Schlüssel -> [Index, Block, …]
+  const get = (cx, cz) => {
+    const k = key(cx, cz); let c = chunks.get(k);
+    if (!c) { c = generateChunk(cx, cz); const e = edits[k]; if (e) { for (let i = 0; i < e.length; i += 2) c[e[i]] = e[i + 1]; edited.add(k); } chunks.set(k, c); }
+    return c;
+  };
   const send = (cx, cz) => {
     const m = meshChunk(get, cx, cz), blocks = get(cx, cz).slice();
     post({ type: 'mesh', cx, cz, blocks, opaque: m.opaque, water: m.water, tufts: m.tufts }, [blocks.buffer, m.opaque.buffer, m.water.buffer, m.tufts.buffer]);
   };
   return (d) => {
-    if (d.type === 'init') configure(d.cfg);
+    if (d.type === 'init') { configure(d.cfg); edits = d.cfg.edits || {}; }
     else if (d.type === 'mesh') send(d.cx, d.cz);
     else if (d.type === 'set') {
       const cx = Math.floor(d.x / CS), cz = Math.floor(d.z / CS), lx = d.x - cx * CS, lz = d.z - cz * CS;

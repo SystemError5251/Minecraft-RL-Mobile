@@ -25,6 +25,11 @@ export class Renderer {
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-0.5, 0, 0, 0.5, 0, 0, 0.5, 1, 0, -0.5, 1, 0, -0.5, 0, 1, 0.5, 0, 1, 0.5, 1, 1, -0.5, 1, 1]), gl.STATIC_DRAW);
     this.tuftIbo = gl.createBuffer();
     this.emptyVao = gl.createVertexArray();
+    // dynamischer Puffer für Figuren/Drops
+    this.entVao = gl.createVertexArray(); this.entVbo = gl.createBuffer();
+    gl.bindVertexArray(this.entVao); gl.bindBuffer(gl.ARRAY_BUFFER, this.entVbo);
+    [[0, 3, 0], [1, 3, 12], [2, 3, 24], [3, 4, 36]].forEach(([i, n, o]) => { gl.enableVertexAttribArray(i); gl.vertexAttribPointer(i, n, gl.FLOAT, false, 52, o); });
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.quadIbo); gl.bindVertexArray(null);
     this.buildClouds();
     this.shadowMats = [mat4(), mat4()];
     this.shadowMatArr = new Float32Array(32);
@@ -119,6 +124,7 @@ export class Renderer {
       sky: this.compile(base, S.SKY_VS, S.SKY_FS),
       cloud: this.compile(base, S.CLOUD_VS, S.CLOUD_FS),
       shadow: this.compile([], S.SHADOW_VS, S.SHADOW_FS, false),
+      entity: this.compile(base, S.ENTITY_VS, S.ENTITY_FS),
     };
     if (this.useFx) this.progs.fx = this.compile(fx, S.QUAD_VS, S.FX_FS);
     if (!q.direct) this.progs.composite = this.compile(this.useFx ? ['FX'] : [], S.QUAD_VS, S.COMPOSITE_FS);
@@ -359,6 +365,13 @@ export class Renderer {
         tris += n * 4;
       }
       gl.enable(gl.CULL_FACE);
+    }
+    if (f.boxes && f.boxes.n > 0) {
+      this.ensureQuads(f.boxes.n / 4);
+      this.use(P.entity, f);
+      gl.bindVertexArray(this.entVao); gl.bindBuffer(gl.ARRAY_BUFFER, this.entVbo);
+      gl.bufferData(gl.ARRAY_BUFFER, f.boxes.data.subarray(0, f.boxes.n * 13), gl.DYNAMIC_DRAW);
+      gl.drawElements(gl.TRIANGLES, f.boxes.n / 4 * 6, gl.UNSIGNED_INT, 0);
     }
     if (q.clouds > 0 && !f.showcase) {
       u = this.use(P.cloud, f);

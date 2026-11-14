@@ -4,27 +4,44 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#0d1117">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="assets/icon-192.png">
+<link rel="apple-touch-icon" href="assets/icon-192.png">
 <title>Kantenhain</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <canvas id="gl"></canvas>
 <div id="underwater"></div>
+<div id="hurt"></div>
 <div id="hud">
-  <div id="cross"></div>
+  <div id="cross"><div id="ring"><div></div></div></div>
   <div id="info"></div>
-  <button id="menuBtn" aria-label="Menü">☰</button>
+  <div id="topbtns">
+    <button id="invBtn" aria-label="Inventar"><svg viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="2.5"/><path d="M3.5 9.5h17M9.5 3.5v17M14.5 3.5v17M3.5 14.5h17"/></svg></button>
+    <button id="menuBtn" aria-label="Menü"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+  </div>
   <div id="stick"><div id="knob"></div></div>
   <div id="actions">
-    <button id="placeBtn" aria-label="Block setzen"><svg viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 9v6M9 12h6"/></svg><span>Setzen</span></button>
-    <button id="breakBtn" aria-label="Block abbauen"><svg viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M9 12h6"/></svg><span>Abbauen</span></button>
+    <button id="duckBtn" aria-label="Sinken"><svg viewBox="0 0 24 24"><path d="M5 10l7 7 7-7M5 4l7 7 7-7"/></svg><span>Runter</span></button>
+    <button id="placeBtn" aria-label="Setzen oder benutzen"><svg viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 9v6M9 12h6"/></svg><span>Setzen</span></button>
+    <button id="breakBtn" aria-label="Abbauen oder angreifen"><svg viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M9 12h6"/></svg><span>Abbauen</span></button>
     <button id="jumpBtn" aria-label="Springen"><svg viewBox="0 0 24 24"><path d="M5 14l7-7 7 7M5 20l7-7 7 7"/></svg><span>Springen</span></button>
   </div>
-  <div id="hotbar"></div>
+  <div id="bottom">
+    <div id="stats"><canvas id="hearts" width="400" height="40"></canvas><div><canvas id="air" width="400" height="40"></canvas><canvas id="food" width="400" height="40"></canvas></div></div>
+    <div id="hotbar"></div>
+  </div>
   <div id="toast"></div>
 </div>
 <div id="labels"></div>
-<div id="menu" hidden></div>
+<div id="inv" class="overlay" hidden></div>
+<div id="menu" class="overlay" hidden></div>
+<div id="death" class="overlay" hidden><div class="panel narrow"><h1>Du bist gestorben</h1><p>Deine Items liegen am Todesort und können wieder eingesammelt werden.</p><button class="wide" id="respawnBtn">Neu starten</button></div></div>
+<div id="title" class="overlay" hidden></div>
+<div id="rotate"><div><svg viewBox="0 0 64 64"><rect x="20" y="6" width="24" height="42" rx="4"/><path d="M8 40a26 26 0 0 0 22 18M30 58l-6-7M30 58l-9 2"/></svg><b>Bitte Gerät drehen</b><span>Kantenhain läuft im Querformat.</span></div></div>
 <div id="loading">Welt wird erzeugt …</div>
 <script type="module" src="src/main.js"></script>
 </body>

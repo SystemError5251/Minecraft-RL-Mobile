@@ -4,7 +4,7 @@ plugins { id 'com.android.application' }
 def webDir = layout.buildDirectory.dir('web')
 def syncWeb = tasks.register('syncWeb', Sync) {
     from(rootProject.file('..')) {
-        include 'index.html', 'style.css', 'src/**', 'assets/**'
+        include 'index.html', 'style.css', 'manifest.json', 'src/**', 'assets/**'
     }
     into webDir.map { it.dir('www') }
 }
@@ -16,8 +16,8 @@ android {
         applicationId 'app.kantenhain'
         minSdk 26
         targetSdk 35
-        versionCode 1
-        versionName '0.1.0'
+        versionCode 2
+        versionName '0.2.0'
     }
     sourceSets { main { assets.srcDir(webDir) } }
     buildTypes { release { minifyEnabled false } }

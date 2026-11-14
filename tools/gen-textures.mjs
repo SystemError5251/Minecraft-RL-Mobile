@@ -394,6 +394,83 @@ function genReed(seed) {
   return Lr;
 }
 
+function planksAt(u, v, o, tint = 1) {
+  const row = Math.floor(v * 4), lv = v * 4 - row;
+  const off = h2(row, 5, 401) * 0.7, uu = mod(u + off, 1);
+  const grain = fbm(uu, v, 3, 4, 402 + row, 40), fine = fbm(u, v, 30, 2, 403, 60);
+  const gap = Math.min(lv, 1 - lv), seam = Math.abs(uu - 0.5) < 0.006 ? 1 : 0;
+  const t = 0.75 + 0.35 * grain + 0.12 * fine + 0.1 * (h2(row, 9, 404) - 0.5);
+  let c = [0.66 * t * tint, 0.47 * t * tint, 0.26 * t * tint];
+  const dark = Math.max(1 - ss(0.0, 0.07, gap), seam);
+  c = mix3(c, [0.16, 0.10, 0.05], dark * 0.85);
+  const nx = Math.abs(uu - 0.5) - 0.44, nd = Math.hypot(nx * 4, lv - 0.5);
+  if (nd < 0.09) c = mix3(c, [0.2, 0.2, 0.22], 0.8);
+  o.c = c; o.h = 0.55 + 0.15 * grain - 0.4 * dark; o.r = 0.8;
+}
+function benchTopAt(u, v, o) {
+  planksAt(u, v, o, 0.92);
+  const e = Math.min(u, 1 - u, v, 1 - v), frame = 1 - ss(0.08, 0.1, e);
+  const grid = Math.min(Math.abs(u - 0.5), Math.abs(v - 0.5)) < 0.012 ? 1 : 0;
+  o.c = mix3(o.c, [0.30, 0.19, 0.10], frame * 0.75); o.c = mix3(o.c, [0.14, 0.09, 0.05], grid * 0.8 * (1 - frame));
+  o.h = o.h + 0.2 * frame - 0.15 * grid;
+}
+function benchSideAt(u, v, o) {
+  planksAt(u, v, o, 0.85);
+  const e = Math.min(u, 1 - u, v, 1 - v), frame = 1 - ss(0.09, 0.11, e);
+  o.c = mix3(o.c, [0.32, 0.20, 0.10], frame * 0.8); o.h += 0.22 * frame;
+  // Werkzeug-Silhouetten
+  const saw = Math.abs(v - 0.42) < 0.035 && u > 0.2 && u < 0.62, han = Math.abs(u - 0.74) < 0.03 && v > 0.25 && v < 0.75, head = Math.abs(v - 0.3) < 0.06 && Math.abs(u - 0.74) < 0.1;
+  if (saw || head) { o.c = [0.55, 0.57, 0.62]; o.r = 0.35; o.h += 0.1; } else if (han) { o.c = [0.3, 0.19, 0.1]; o.h += 0.1; }
+}
+function furnaceFrontAt(u, v, o) {
+  stoneAt(u, v, o); o.c = [o.c[0] * 0.72, o.c[1] * 0.72, o.c[2] * 0.75];
+  const e = Math.min(u, 1 - u, v, 1 - v);
+  o.c = mix3(o.c, [0.12, 0.12, 0.13], (1 - ss(0.03, 0.06, e)) * 0.7);
+  const ax = Math.abs(u - 0.5), arch = v > 0.5 ? ax < 0.27 && v < 0.86 : Math.hypot(ax, v - 0.5) < 0.27;
+  if (arch) {
+    const glow = ss(0.55, 0.86, v);
+    o.c = mix3([0.03, 0.025, 0.025], [0.9, 0.38, 0.08], glow * (0.6 + 0.4 * fbm(u, v, 8, 2, 411)));
+    o.a = glow * 0.5; o.h = 0.05; o.r = 0.9;
+    if (Math.abs(mod(u * 9, 1) - 0.5) < 0.16 && v > 0.56) { o.c = [0.08, 0.08, 0.09]; o.a = 0; o.h = 0.3; }
+  }
+  const slot = Math.abs(v - 0.18) < 0.035 && ax < 0.24;
+  if (slot) { o.c = [0.04, 0.04, 0.05]; o.h = 0.1; }
+}
+function furnaceTopAt(u, v, o) {
+  stoneAt(u, v, o); o.c = [o.c[0] * 0.7, o.c[1] * 0.7, o.c[2] * 0.73];
+  const e = Math.min(u, 1 - u, v, 1 - v), rim = 1 - ss(0.1, 0.13, e);
+  o.c = mix3(o.c, [0.14, 0.14, 0.15], rim * 0.6); o.h += 0.2 * rim;
+}
+function speckAt(u, v, o, c0, c1, seed, rough) {
+  stoneAt(u, v, o);
+  const p = vor(u, v, 6, seed, 1.0), rad = 0.2 + 0.16 * h2(Math.floor(p.id * 1e6), 3, seed + 1);
+  if (p.id > 0.45 && p.f1 < rad) {
+    const t = 1 - p.f1 / rad, lit = clamp(0.5 + (-p.dx * 0.7 - p.dy * 0.9) / rad * 0.5), e = ss(0, 0.3, t);
+    const facet = Math.floor(lit * 3.99) / 3;
+    o.c = mix3(mix3(o.c, [0.06, 0.06, 0.07], 0.5), mix3(c0, c1, facet), e);
+    o.h = mix(o.h, 0.5 + 0.35 * t, e); o.r = mix(o.r, rough, e);
+  }
+}
+function bedTopAt(u, v, o) {
+  const cloth = fbm(u, v, 40, 2, 421) * 0.5 + fbm(u, v, 4, 3, 422) * 0.5;
+  const pillow = v < 0.3, e = Math.min(u, 1 - u, v, 1 - v);
+  let c = pillow ? [0.86, 0.86, 0.80] : [0.62, 0.13, 0.12];
+  const fold = pillow ? ss(0.0, 0.08, Math.min(u - 0.08, 0.92 - u, v - 0.05, 0.27 - v)) : 1;
+  const stripe = !pillow && Math.abs(v - 0.4) < 0.025 ? 1 : 0;
+  c = mix3(c, [0.9, 0.82, 0.6], stripe * 0.8);
+  const t = 0.8 + 0.4 * cloth;
+  o.c = [c[0] * t * (0.75 + 0.25 * fold), c[1] * t * (0.75 + 0.25 * fold), c[2] * t * (0.75 + 0.25 * fold)];
+  o.c = mix3(o.c, [0.25, 0.15, 0.08], (1 - ss(0.02, 0.04, e)) * 0.9);
+  o.h = 0.4 + 0.3 * cloth + (pillow ? 0.25 * fold : 0); o.r = 0.95;
+}
+function bedSideAt(u, v, o) {
+  if (v > 0.6) { planksAt(u, v, o, 0.8); return; }
+  const cloth = fbm(u, v, 40, 2, 423) * 0.5 + fbm(u, v, 4, 3, 424) * 0.5, t = 0.8 + 0.4 * cloth;
+  const c = u < 0.3 ? [0.86, 0.86, 0.80] : [0.62, 0.13, 0.12];
+  const sh = 0.7 + 0.3 * ss(0.6, 0.3, v);
+  o.c = [c[0] * t * sh, c[1] * t * sh, c[2] * t * sh]; o.h = 0.5 + 0.3 * cloth; o.r = 0.95;
+}
+
 const VEINS = {
   gold: { col: [0.92, 0.58, 0.10], hot: [1.0, 0.86, 0.42], em: 0.3, rough: 0.2, w: 0.1, sel: 0.26, seed: 201 },
   violet: { col: [0.50, 0.12, 0.92], hot: [0.86, 0.55, 1.0], em: 1.0, rough: 0.35, w: 0.085, sel: 0.30, seed: 202 },
@@ -423,6 +500,15 @@ const GEN = {
   flower_yellow: () => [genFlower(305, [1.0, 0.72, 0.08], [0.85, 0.35, 0.05]), { flat: true, cutout: true }],
   flower_pink: () => [genSpike(306), { flat: true, cutout: true }],
   reed: () => [genReed(307), { flat: true, cutout: true }],
+  planks: () => [fromFn((u, v, o) => planksAt(u, v, o)), { ns: 2.2, bake: 0.5 }],
+  workbench_top: () => [fromFn(benchTopAt), { ns: 2.2, bake: 0.5 }],
+  workbench_side: () => [fromFn(benchSideAt), { ns: 2.2, bake: 0.5 }],
+  furnace_front: () => [fromFn(furnaceFrontAt), { ns: 2.6, bake: 0.6 }],
+  furnace_top: () => [fromFn(furnaceTopAt), { ns: 2.6, bake: 0.6 }],
+  coal_ore: () => [fromFn((u, v, o) => speckAt(u, v, o, [0.05, 0.05, 0.06], [0.22, 0.22, 0.25], 431, 0.55)), { ns: 2.6, bake: 0.6 }],
+  diamond_ore: () => [fromFn((u, v, o) => speckAt(u, v, o, [0.15, 0.62, 0.72], [0.75, 0.98, 1.0], 441, 0.12)), { ns: 2.6, bake: 0.6 }],
+  bed_top: () => [fromFn(bedTopAt), { ns: 1.6, bake: 0.4 }],
+  bed_side: () => [fromFn(bedSideAt), { ns: 1.6, bake: 0.4 }],
 };
 
 // ---------- Nachbearbeitung: Normal-Map, gebackenes Streiflicht, Downsampling ----------
@@ -479,6 +565,22 @@ LAYERS.forEach((name, li) => {
 fs.mkdirSync(path.join(root, 'assets'), { recursive: true });
 for (const n of [64, 128]) fs.writeFileSync(path.join(root, 'assets', `tex${n}.bin`), Buffer.concat([out[n].alb, out[n].nrm]));
 console.log(`Texturen erzeugt: ${count} Layer, 64px + 128px in ${Date.now() - t0} ms`);
+
+// App-Icons (PWA): isometrischer Grasblock, direkt gerastert
+for (const size of [192, 512]) {
+  const img = new Uint8Array(size * size * 4), k = (p) => [((p[0] - 54) * 1.55 + 54) / 108 * size, ((p[1] - 55) * 1.55 + 54) / 108 * size];
+  const polys = [
+    [[0x6f, 0xcb, 0x3a], [[54, 28], [78, 41], [54, 54], [30, 41]]], [[0x7a, 0x4a, 0x26], [[30, 41], [54, 54], [54, 82], [30, 69]]], [[0x5a, 0x34, 0x18], [[78, 41], [54, 54], [54, 82], [78, 69]]],
+    [[0x4f, 0xa5, 0x2a], [[30, 41], [54, 54], [54, 61], [48, 56], [42, 57], [36, 51], [30, 50]]], [[0x3c, 0x8a, 0x20], [[78, 41], [54, 54], [54, 61], [60, 57], [66, 56], [72, 51], [78, 49]]],
+  ].map(([c, pts]) => [c, pts.map(k)]);
+  const inside = (pts, x, y) => { let r = false; for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) if ((pts[i][1] > y) !== (pts[j][1] > y) && x < (pts[j][0] - pts[i][0]) * (y - pts[i][1]) / (pts[j][1] - pts[i][1]) + pts[i][0]) r = !r; return r; };
+  for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+    let c = [0x0d, 0x11, 0x17];
+    for (const [pc, pts] of polys) if (inside(pts, x + 0.5, y + 0.5)) c = pc;
+    img.set([c[0], c[1], c[2], 255], (y * size + x) * 4);
+  }
+  fs.writeFileSync(path.join(root, 'assets', `icon-${size}.png`), png(size, size, img));
+}
 
 const pv = process.argv.indexOf('--preview');
 if (pv > 0) { // Kontaktbogen zur Kontrolle: oben Albedo, unten Normal

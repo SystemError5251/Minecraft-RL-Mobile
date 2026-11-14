@@ -12,11 +12,24 @@ npm run screenshots  # Vergleichsbilder Niedrig/Ultra (benötigt Playwright + Ch
 
 Das Projekt ist eine rein statische Seite (`index.html`, `src/`, `assets/`) und läuft auf jedem Static-Hosting.
 
-Steuerung (Touch, fürs Hochformat ausgelegt): Joystick links unten, rechts unten Tasten für Setzen, Abbauen und Springen (gedrückt halten wiederholt), überall sonst wischen zum Umsehen. Am PC: WASD, Maus, Linksklick abbauen, Rechtsklick setzen, 1–9/Mausrad für die Leiste, M/Esc für das Menü.
+## Spielmodi
 
-## Android-App (Hochformat)
+Beim Erstellen einer Welt wählst du den Modus; im Pausenmenü lässt er sich umschalten. Spielmodus, Inventar, Leben, Hunger, Position und alle Blockänderungen werden pro Welt in IndexedDB gespeichert.
 
-`android/` enthält eine schlanke WebView-Hülle: Vollbild, fest im Hochformat, ohne Internetzugriff – die Spieldateien liegen in der APK. Eine fertige Debug-APK liegt unter `dist/Kantenhain-debug.apk` (Android 8.0+, WebGL2 nötig).
+- **Kreativ:** unendlich Blöcke, Inventar mit Kategorien und Suche, sofort abbauen, kein Schaden. Fliegen per Doppeltipp auf Springen (Springen = hoch, Runter-Taste = sinken). Tageszeit im Menü frei einstellbar.
+- **Survival:** 10 Herzen, 10 Keulen Hunger, Fallschaden, Ertrinken mit Luftanzeige. Abbauzeit je Block und Werkzeug, Blöcke fallen als Items. Werkzeuge aus Holz, Stein, Eisen und Diamant mit Haltbarkeit. 27 + 9 Slots, Stapel bis 64, Crafting 2×2 im Inventar und 3×3 an der Werkbank, Ofen zum Schmelzen. Nachts und in Höhlen Gegner (Schattenwicht, Höhlenkrabbler, Steinkoloss), tagsüber Tiere (Wollbock, Hüpfer). Beim Tod bleiben die Items liegen; das Bett setzt den Spawnpunkt und überspringt die Nacht.
+
+Figuren und Item-Physik laufen mit festen 20 Ticks pro Sekunde, getrennt vom Rendern.
+
+Rezepte (Auswahl): Stamm → 4 Bretter · 2 Bretter übereinander → 4 Stöcke · 2×2 Bretter → Werkbank · 8 Steine im Ring → Ofen · 3 Laub über 3 Brettern → Bett · Werkzeuge im üblichen Muster aus Material + Stöcken. Im Ofen: Eisenerz → Eisenbarren, rohes → gebratenes Fleisch, Stamm → Kohle.
+
+## Steuerung (nur Querformat)
+
+Das Spiel läuft ausschließlich im Querformat (PWA-Manifest `orientation: landscape`, `display: fullscreen`); hochkant pausiert es und bittet ums Drehen. Touch: Joystick links, rechts Tasten für Setzen/Benutzen, Abbauen/Angreifen (halten) und Springen, oben rechts Inventar und Menü, überall sonst wischen zum Umsehen. Am PC: WASD, Maus, Linksklick abbauen, Rechtsklick setzen/benutzen, E Inventar, 1–9/Mausrad für die Leiste, Leertaste doppelt = Fliegen, Shift = sinken, Strg = sprinten, M/Esc Menü.
+
+## Android-App (Querformat)
+
+`android/` enthält eine schlanke WebView-Hülle: Vollbild, fest im Querformat, ohne Internetzugriff – die Spieldateien liegen in der APK. Eine fertige Debug-APK liegt unter `dist/Kantenhain-debug.apk` (Android 8.0+, WebGL2 nötig).
 
 ```
 cd android
@@ -60,4 +73,6 @@ Die Szenen lassen sich direkt öffnen: `index.html?scene=meadow|swamp|forest|sho
 - `tools/gen-textures.mjs` – Textur-Generator (Farbe, Normal, Roughness, Höhe, Emissive je Block)
 - `src/worldgen.js`, `src/mesher.js`, `src/worker.js` – Welt und Meshes im Web Worker
 - `src/renderer.js`, `src/shaders.js` – Render-Pipeline
+- `src/game.js`, `src/entities.js`, `src/items.js`, `src/inventory.js` – Spielregeln, Figuren, Items und Rezepte
+- `src/storage.js` – Welten in IndexedDB
 - `src/settings.js` – Qualitätsstufen, Einzelschalter, Auto-Qualität

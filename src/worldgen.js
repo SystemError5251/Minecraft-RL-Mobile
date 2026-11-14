@@ -1,5 +1,5 @@
 // Weltgenerator: Wiese mit Hügeln, Wald mit Seen, Sumpf. Läuft im Worker (und für Spawn-Höhe im Hauptthread).
-import { hash2, hash3, vnoise, fbm, smoothstep } from './noise.js';
+import { hash2, hash3, vnoise, vnoise3, fbm, smoothstep } from './noise.js';
 import { B } from './blocks.js';
 export const CS = 16, CH = 96, SEA = 40;
 let SEED = 1337, SCENE = null;
@@ -80,8 +80,22 @@ export function generateChunk(cx, cz) {
       else if (y < deep) {
         b = B.BASALT;
         if (hash3(wx >> 1, y >> 1, wz >> 1, SEED + 32) > 0.9) b = B.BASALT_GOLD + Math.floor(hash3(wx >> 3, y >> 3, wz >> 3, SEED + 33) * 3);
-      } else b = hash3(wx >> 1, y >> 1, wz >> 1, SEED + 34) > 0.985 ? B.ORE : B.STONE;
+      } else {
+        b = B.STONE;
+        if (hash3(wx >> 1, y >> 1, wz >> 1, SEED + 34) > 0.975) b = B.COAL_ORE;
+        else if (hash3(wx >> 1, y >> 1, wz >> 1, SEED + 35) > 0.982) b = B.ORE;
+        else if (y < 20 && hash3(wx >> 1, y >> 1, wz >> 1, SEED + 36) > 0.991) b = B.DIAMOND_ORE;
+      }
       blocks[lx + lz * CS + y * CS * CS] = b;
+    }
+    // Höhlen: Schnitt zweier Rauschbänder ergibt Gänge; vereinzelt Eingänge bis zur Oberfläche
+    if (!SCENE) {
+      const capY = hi > SEA + 1 && vnoise(wx / 26, wz / 26, SEED + 61) > 0.7 ? hi : hi - 5;
+      for (let y = 3; y <= capY; y++) {
+        if (Math.abs(vnoise3(wx / 19, y / 12, wz / 19, SEED + 62) - 0.5) > 0.07) continue;
+        if (Math.abs(vnoise3(wx / 19, y / 12, wz / 19, SEED + 63) - 0.5) > 0.07) continue;
+        blocks[lx + lz * CS + y * CS * CS] = 0;
+      }
     }
     for (let y = hi + 1; y < SEA; y++) blocks[lx + lz * CS + y * CS * CS] = B.WATER;
   }

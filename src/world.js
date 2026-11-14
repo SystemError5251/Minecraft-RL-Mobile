@@ -1,11 +1,14 @@
-// Chunk-Verwaltung im Hauptthread: fordert Meshes beim Worker an, hält Blockdaten für Kollision.
+// Chunk-Verwaltung im Hauptthread: fordert Meshes beim Worker an, hält Blockdaten für Kollision und merkt sich Änderungen.
 import { CS, CH } from './worldgen.js';
 import { createService } from './chunkservice.js';
 const key = (x, z) => x + ',' + z;
 export class World {
+  // cfg: { seed, scene, edits } – edits: gespeicherte Blockänderungen { "cx,cz": [Index, Block, …] }
   constructor(renderer, cfg) {
-    this.r = renderer; this.chunks = new Map(); this.list = []; this.pending = 0; this.offsets = []; this.radius = -1; this.tick = 0;
-    this.cfg = cfg; this.sent = [];
+    this.r = renderer; this.chunks = new Map(); this.list = []; this.pending = 0; this.offsets = []; this.radius = -1; this.tick = 0; this.missing = 1;
+    this.edits = new Map();
+    for (const k in cfg.edits || {}) { const m = new Map(), e = cfg.edits[k]; for (let i = 0; i < e.length; i += 2) m.set(e[i], e[i + 1]); this.edits.set(k, m); }
+    this.sent = [];
     try {
       this.worker = new Worker(new URL('./worker.js', import.meta.url), { type: 'module' });
       this.worker.onmessage = (e) => { if (e.data.type === 'ready') { this.workerOk = true; clearTimeout(this.wt); } else this.onMesh(e.data); };
@@ -24,6 +27,7 @@ export class World {
     const q = this.sent; this.sent = [];
     q.forEach((m, i) => setTimeout(() => this.local(m), i * 4));
   }
+  editsJSON() { const o = {}; for (const [k, m] of this.edits) { const a = []; for (const [i, b] of m) a.push(i, b); o[k] = a; } return o; }
   onMesh(d) {
     const c = this.chunks.get(key(d.cx, d.cz));
     if (!c) return;
@@ -67,11 +71,15 @@ export class World {
   }
   isLoaded(x, z) { const c = this.chunks.get(key(Math.floor(x / CS), Math.floor(z / CS))); return !!(c && c.ready); }
   setBlock(x, y, z, b) {
-    if (y < 1 || y >= CH) return;
-    const cx = Math.floor(x / CS), cz = Math.floor(z / CS), c = this.chunks.get(key(cx, cz));
-    if (!c || !c.blocks) return;
-    c.blocks[(x - cx * CS) + (z - cz * CS) * CS + y * CS * CS] = b;
-    const loaded = []; for (const [k, ch] of this.chunks) if (ch.ready) loaded.push(k);
+    if (y < 1 || y >= CH) return false;
+    const cx = Math.floor(x / CS), cz = Math.floor(z / CS), k = key(cx, cz), c = this.chunks.get(k);
+    if (!c || !c.blocks) return false;
+    const i = (x - cx * CS) + (z - cz * CS) * CS + y * CS * CS;
+    c.blocks[i] = b;
+    let m = this.edits.get(k); if (!m) this.edits.set(k, (m = new Map()));
+    m.set(i, b);
+    const loaded = []; for (const [ck, ch] of this.chunks) if (ch.ready) loaded.push(ck);
     this.post({ type: 'set', x, y, z, b, loaded });
+    return true;
   }
 }

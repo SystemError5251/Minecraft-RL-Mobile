@@ -3,5 +3,6 @@ export const LAYERS = [
   'grass_top', 'grass_side', 'dirt', 'stone', 'sand', 'log_side', 'log_top', 'leaves', 'water',
   'basalt', 'basalt_gold', 'basalt_violet', 'basalt_teal', 'bricks', 'ore',
   'tuft_grass', 'tuft_tall', 'flower_red', 'flower_white', 'flower_yellow', 'flower_pink', 'reed',
+  'planks', 'workbench_top', 'workbench_side', 'furnace_front', 'furnace_top', 'coal_ore', 'diamond_ore', 'bed_top', 'bed_side',
 ];
 export const L = Object.fromEntries(LAYERS.map((n, i) => [n, i]));

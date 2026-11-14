@@ -18,3 +18,10 @@ export function fbm(x, y, s, oct) {
   return sum / n;
 }
 export const smoothstep = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+export function vnoise3(x, y, z, s) {
+  const xi = Math.floor(x), yi = Math.floor(y), zi = Math.floor(z), fx = x - xi, fy = y - yi, fz = z - zi;
+  const sx = fx * fx * (3 - 2 * fx), sy = fy * fy * (3 - 2 * fy), sz = fz * fz * (3 - 2 * fz);
+  const l = (a, b, t) => a + (b - a) * t;
+  const p = (i, j, k) => hash3(xi + i, yi + j, zi + k, s);
+  return l(l(l(p(0, 0, 0), p(1, 0, 0), sx), l(p(0, 1, 0), p(1, 1, 0), sx), sy), l(l(p(0, 0, 1), p(1, 0, 1), sx), l(p(0, 1, 1), p(1, 1, 1), sx), sy), sz);
+}

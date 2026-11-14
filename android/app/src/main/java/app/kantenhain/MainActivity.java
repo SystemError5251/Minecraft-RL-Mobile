@@ -18,7 +18,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Vollbild-WebView im Hochformat. Die Spieldateien liegen als Assets in der APK und werden unter einer
+ * Vollbild-WebView im Querformat. Die Spieldateien liegen als Assets in der APK und werden unter einer
  * festen https-Adresse ausgeliefert (ES-Module und Module-Worker funktionieren nicht über file://).
  */
 public class MainActivity extends Activity {
@@ -36,6 +36,7 @@ public class MainActivity extends Activity {
         WebSettings s = web.getSettings();
         s.setJavaScriptEnabled(true);
         s.setDomStorageEnabled(true); // Grafikeinstellungen (localStorage)
+        s.setDatabaseEnabled(true);   // Welten (IndexedDB)
         s.setMediaPlaybackRequiresUserGesture(false);
         s.setAllowFileAccess(false);
         s.setAllowContentAccess(false);

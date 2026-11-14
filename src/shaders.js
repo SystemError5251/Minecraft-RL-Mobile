@@ -480,3 +480,37 @@ void main() {
   c += (ign(gl_FragCoord.xy) - 0.5) / 255.0;
   o = vec4(c, 1.0);
 }`;
+
+// Figuren und Item-Drops: einfache Boxen, texturiert (Block-Items) oder einfarbig
+export const ENTITY_VS = `
+layout(location=0) in vec3 aPos;
+layout(location=1) in vec3 aNrm;
+layout(location=2) in vec3 aUVL;
+layout(location=3) in vec4 aCol;
+uniform mat4 uViewProj;
+out vec3 vWP;
+out vec3 vN;
+out vec3 vUVL;
+out vec4 vCol;
+void main() { vWP = aPos; vN = aNrm; vUVL = aUVL; vCol = aCol; gl_Position = uViewProj * vec4(aPos, 1.0); }`;
+export const ENTITY_FS = `
+in vec3 vWP;
+in vec3 vN;
+in vec3 vUVL;
+in vec4 vCol;
+uniform sampler2DArray uAlbedo;
+out vec4 o;
+void main() {
+  vec3 alb = vCol.rgb;
+  if (vUVL.z >= 0.0) alb *= texture(uAlbedo, vec3(vUVL.xy, floor(vUVL.z + 0.5))).rgb;
+  vec3 n = normalize(vN);
+  float vis = vCol.a;
+#ifdef SHADOWS
+  vis *= shadowAt(vWP, n);
+#endif
+  float sky = mix(0.3, 1.0, vCol.a);
+  vec3 amb = mix(uAmbGround, uAmbSky, n.y * 0.5 + 0.5) * sky * sky + 0.02;
+  vec3 base = min(alb, vec3(1.0));
+  vec3 col = base * (amb + uLightColor * max(dot(n, uLightDir), 0.0) * vis) + max(alb - 1.0, 0.0) * 2.0; // Farben > 1 leuchten (Augen)
+  o = vec4(finalize(applyFog(col, vWP)), 1.0);
+}`;
